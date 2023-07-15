@@ -136,12 +136,39 @@
 
     <script>
         function rollDice() {
-            // Generate a random number between 1 and 6
-            var randomNumber = Math.floor(Math.random() * 6) + 1;
+            var grid = [
+                ["Roll Again", "", "", "", "HQ", "", "", "", "Roll Again"],
+                ["", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                ["HQ", "", "", "", "Trivial Compute", "", "", "", "HQ"],
+                ["", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                ["", "", "", "", "", "", "", "", ""],
+                ["Roll Again", "", "", "", "HQ", "", "", "", "Roll Again"]
+            ];
 
-            // Display the output in the well container
+            var rowCount = grid.length;
+            var columnCount = grid[0].length;
+
             var outputElement = document.querySelector(".well p");
-            outputElement.innerHTML = "The dice rolled a " + randomNumber + "!";
+            var diceRoll = Math.floor(Math.random() * 6) + 1;
+            outputElement.innerHTML = "The dice rolled a " + diceRoll + "!";
+
+            for (var i = 0; i < rowCount; i++) {
+                for (var j = 0; j < columnCount; j++) {
+                    var cellId = "cell-" + String.fromCharCode(65 + i) + (j + 1);
+                    var cell = document.getElementById(cellId);
+
+                    if (grid[i][j] === "Roll Again") {
+                        cell.innerHTML = "Roll Again";
+                    } else if (grid[i][j] === "HQ") {
+                        cell.innerHTML = "HQ";
+                    } else {
+                        cell.innerHTML = "";
+                    }
+                }
+            }
         }
     </script>
 
