@@ -71,7 +71,7 @@
         </tbody>
     </table>
 
-    <h2>Edit Questions</h2>
+    <h2>Edit Questions and Answers</h2>
     <table class="table">
         <thead>
             <tr>
@@ -92,7 +92,8 @@
                 </td>
                 <td>{{ question.category.name }}</td>
                 <td>
-                    <button class="btn btn-primary update-question" data-id="{{ question.id }}">Update</button>
+                    <button class="btn btn-primary update-question" data-id="{{ question.id }}">Update Question</button>
+                    <button class="btn btn-primary update-answer" data-id="{{ question.id }}">Update Answer</button>
                     <button class="btn btn-danger delete-question" data-id="{{ question.id }}">Delete</button>
                 </td>
             </tr>
@@ -126,11 +127,10 @@
         $(document).on('click', '.update-question', function () {
             var questionId = $(this).data('id');
             var questionText = $('.edit-question[data-id="' + questionId + '"]').val();
-            var answerText = $('.edit-answer[data-id="' + questionId + '"]').val();
             $.ajax({
                 url: '/update_question',
                 type: 'POST',
-                data: { id: questionId, question: questionText, answer: answerText },
+                data: { id: questionId, question: questionText },
                 success: function (response) {
                     console.log(response);
                     alert('Question updated successfully');
@@ -138,6 +138,25 @@
                 error: function (error) {
                     console.error(error);
                     alert('An error occurred while updating the question');
+                }
+            });
+        });
+
+        // Update answer
+        $(document).on('click', '.update-answer', function () {
+            var questionId = $(this).data('id');
+            var answerText = $('.edit-answer[data-id="' + questionId + '"]').val();
+            $.ajax({
+                url: '/update_answer',
+                type: 'POST',
+                data: { id: questionId, answer: answerText },
+                success: function (response) {
+                    console.log(response);
+                    alert('Answer updated successfully');
+                },
+                error: function (error) {
+                    console.error(error);
+                    alert('An error occurred while updating the answer');
                 }
             });
         });
