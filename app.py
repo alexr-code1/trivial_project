@@ -134,37 +134,45 @@ def update_cell():
 def players():
     if request.method == 'POST':
         with app.app_context():
-            player1 = request.form['player1']
-            player1_color = request.form['player1_color']
-            player2 = request.form['player2']
-            player2_color = request.form['player2_color']
-            player3 = request.form['player3']
-            player3_color = request.form['player3_color']
-            player4 = request.form['player4']
-            player4_color = request.form['player4_color']
+            players = []
+            for i in range(1, 5):
+                player_name = request.form.get(f'player{i}')
+                player_color = request.form.get(f'player{i}_color')
 
-            players = [
-                {'name': player1, 'color': player1_color},
-                {'name': player2, 'color': player2_color},
-                {'name': player3, 'color': player3_color},
-                {'name': player4, 'color': player4_color}
-            ]
-
-            # Save players to the database
-            for player in players:
-                new_player = Player(name=player['name'], color=player['color'])
-                db.session.add(new_player)
+                if player_name:
+                    player = Player(name=player_name, color=player_color)
+                    db.session.add(player)
+                    players.append(player)
+            
             db.session.commit()
-
+            
             return render_template('edit_players.html', players=players)
     else:
-        return render_template('players.html')
+        with app.app_context():
+            players = Player.query.all()
+            return render_template('edit_players.html', players=players)
 
-@app.route('/edit_players')
+@app.route('/edit_players', methods=['GET', 'POST'])
 def edit_players():
     with app.app_context():
-        players = Player.query.all()
-        return render_template('edit_players.html', players=players)
+        if request.method == 'POST':
+            players = []
+            for i in range(1, 5):
+                player_id = request.form.get(f'player{i}_id')
+                player_name = request.form.get(f'player{i}')
+                player_color = request.form.get(f'player{i}_color')
+
+                if player_id:
+                    player = Player.query.get(player_id)
+                    player.name = player_name
+                    player.color = player_color
+                    db.session.commit()
+                    players.append(player)
+
+            return render_template('edit_players.html', players=players)
+        else:
+            players = Player.query.all()
+            return render_template('edit_players.html', players=players)
 
 @app.route('/qa', methods=['GET', 'POST'])
 def qa():
@@ -220,6 +228,18 @@ def update_question():
 
         return jsonify({'message': 'Question updated successfully'})
 
+@app.route('/update_answer', methods=['POST'])
+def update_answer():
+    with app.app_context():
+        question_id = request.form['id']
+        answer_text = request.form['answer']
+
+        question = Question.query.get(question_id)
+        question.answer = answer_text
+        db.session.commit()
+
+        return jsonify({'message': 'Answer updated successfully'})
+
 @app.route('/delete_question', methods=['POST'])
 def delete_question():
     with app.app_context():
@@ -242,6 +262,15 @@ def delete_category():
 
         return jsonify({'message': 'Category deleted successfully'})
 
+@app.route('/update_category', methods=['POST'])
+def update_category():
+    category_id = request.form['id']
+    name = request.form['name']
+    category = Category.query.get(category_id)
+    category.name = name
+    db.session.commit()
+    return jsonify({'message': 'Category updated successfully'})
+    
 # Create the database tables
 with app.app_context():
     db.create_all()
