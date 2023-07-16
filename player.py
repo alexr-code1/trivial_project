@@ -29,8 +29,13 @@ class Player:
         """
         return self.color
     
-    def color_winning(self):
-        pass
+    def update_colors_won(self, color:str):
+        """
+        Update the colors that a player has won. 
+        :param color[str]: New color that the player just won. 
+        :return: None
+        """
+        self.colors_won.append(color)
 
     def score_update(self, score_change: int):
         """
