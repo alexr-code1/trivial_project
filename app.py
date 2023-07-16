@@ -1,15 +1,7 @@
 from flask import Flask, render_template, jsonify, request
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-
-# MySQL Configuration
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'password'
-app.config['MYSQL_DB'] = 'sample_db'
-
-mysql = MySQL(app)
 
 # Define the grid cells and their initial colors
 grid_cells = {
@@ -96,33 +88,163 @@ grid_cells = {
     'I9': 'light-grey',
 }
 
-# Route for the homepage
+# Configure the database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///trivial.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+# Player model
+class Player(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    color = db.Column(db.String(20), nullable=False)
+
+# Category model
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+
+# Question model
+class Question(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    category = db.relationship('Category', backref=db.backref('questions', lazy=True))
+    question = db.Column(db.String(255), nullable=False)
+    answer = db.Column(db.String(255), nullable=False)
+
+# Routes
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route to retrieve the grid cells and their colors
 @app.route('/grid_cells', methods=['GET'])
 def get_grid_cells():
     grid = [{'cell_id': cell_id, 'color': grid_cells[cell_id]} for cell_id in grid_cells]
     return jsonify(grid)
 
-# Route to update the color of a grid cell
 @app.route('/update_cell', methods=['POST'])
 def update_cell():
     cell_id = request.form['cell_id']
     color = request.form['color']
-    
-    # Update the color in the database
-    cur = mysql.connection.cursor()
-    cur.execute('UPDATE cells SET color = %s WHERE cell_id = %s', (color, cell_id))
-    mysql.connection.commit()
-    cur.close()
-    
-    # Update the color in the grid_cells dictionary
     grid_cells[cell_id] = color
-    
     return jsonify({'message': 'Cell color updated successfully'})
+
+@app.route('/players', methods=['GET', 'POST'])
+def players():
+    if request.method == 'POST':
+        with app.app_context():
+            player1 = request.form['player1']
+            player1_color = request.form['player1_color']
+            player2 = request.form['player2']
+            player2_color = request.form['player2_color']
+            player3 = request.form['player3']
+            player3_color = request.form['player3_color']
+            player4 = request.form['player4']
+            player4_color = request.form['player4_color']
+
+            players = [
+                {'name': player1, 'color': player1_color},
+                {'name': player2, 'color': player2_color},
+                {'name': player3, 'color': player3_color},
+                {'name': player4, 'color': player4_color}
+            ]
+
+            # Save players to the database
+            for player in players:
+                new_player = Player(name=player['name'], color=player['color'])
+                db.session.add(new_player)
+            db.session.commit()
+
+            return render_template('edit_players.html', players=players)
+    else:
+        return render_template('players.html')
+
+@app.route('/edit_players')
+def edit_players():
+    with app.app_context():
+        players = Player.query.all()
+        return render_template('edit_players.html', players=players)
+
+@app.route('/qa', methods=['GET', 'POST'])
+def qa():
+    if request.method == 'POST':
+        with app.app_context():
+            category1 = request.form['category1']
+            category2 = request.form['category2']
+            category3 = request.form['category3']
+            category4 = request.form['category4']
+
+            categories = [
+                {'name': category1},
+                {'name': category2},
+                {'name': category3},
+                {'name': category4}
+            ]
+
+            # Save categories to the database
+            for category in categories:
+                new_category = Category(name=category['name'])
+                db.session.add(new_category)
+            db.session.commit()
+
+            return render_template('qa.html', categories=categories)
+    else:
+        with app.app_context():
+            categories = Category.query.all()
+            questions = Question.query.all()
+            return render_template('qa.html', categories=categories, questions=questions)
+
+@app.route('/add_qa', methods=['POST'])
+def add_qa():
+    with app.app_context():
+        category_id = request.form['category_id']
+        question = request.form['question']
+        answer = request.form['answer']
+
+        new_question = Question(category_id=category_id, question=question, answer=answer)
+        db.session.add(new_question)
+        db.session.commit()
+
+        return jsonify({'message': 'QA submitted successfully'})
+
+@app.route('/update_question', methods=['POST'])
+def update_question():
+    with app.app_context():
+        question_id = request.form['id']
+        question_text = request.form['question']
+
+        question = Question.query.get(question_id)
+        question.question = question_text
+        db.session.commit()
+
+        return jsonify({'message': 'Question updated successfully'})
+
+@app.route('/delete_question', methods=['POST'])
+def delete_question():
+    with app.app_context():
+        question_id = request.form['id']
+
+        question = Question.query.get(question_id)
+        db.session.delete(question)
+        db.session.commit()
+
+        return jsonify({'message': 'Question deleted successfully'})
+
+@app.route('/delete_category', methods=['POST'])
+def delete_category():
+    with app.app_context():
+        category_id = request.form['id']
+
+        category = Category.query.get(category_id)
+        db.session.delete(category)
+        db.session.commit()
+
+        return jsonify({'message': 'Category deleted successfully'})
+
+# Create the database tables
+with app.app_context():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
