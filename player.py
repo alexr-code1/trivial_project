@@ -37,6 +37,12 @@ class Player:
         """
         self.colors_won.append(color)
 
+    def get_colors_won(self):
+        """
+        Return the colors that a player has won.
+        """
+        return self.colors_won
+
     def score_update(self, score_change: int):
         """
         Updates the player's score.
@@ -44,6 +50,12 @@ class Player:
         :return: None
         """
         self.player_score += score_change
+    
+    def get_score(self):
+        """
+        Returns the player's score.
+        """
+        return self.player_score
 
     def set_position(self, position: List):
         """
