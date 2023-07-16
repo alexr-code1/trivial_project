@@ -6,54 +6,24 @@
     <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>View Players</h1>
+    <h1>Edit Players</h1>
     <div class="container">
         <form action="{{ url_for('edit_players') }}" method="POST">
+            {% for player in players %}
             <div class="form-group">
-                <label for="player1">Player 1 Name:</label>
-                <input type="text" id="player1" name="player1" required value="{{ player1 }}">
-                <label for="player1_color">Player 1 Color:</label>
-                <select id="player1_color" name="player1_color" required>
-                    <option value="blue" {% if player1_color == 'blue' %}selected{% endif %}>Blue</option>
-                    <option value="green" {% if player1_color == 'green' %}selected{% endif %}>Green</option>
-                    <option value="yellow" {% if player1_color == 'yellow' %}selected{% endif %}>Yellow</option>
-                    <option value="red" {% if player1_color == 'red' %}selected{% endif %}>Red</option>
+                <input type="hidden" name="player{{ loop.index }}_id" value="{{ player.id }}">
+                <label for="player{{ loop.index }}">Player {{ loop.index }} Name:</label>
+                <input type="text" id="player{{ loop.index }}" name="player{{ loop.index }}" required value="{{ player.name }}">
+                <label for="player{{ loop.index }}_color">Player {{ loop.index }} Color:</label>
+                <select id="player{{ loop.index }}_color" name="player{{ loop.index }}_color" required>
+                    <option value="blue" {% if player.color == 'blue' %}selected{% endif %}>Blue</option>
+                    <option value="green" {% if player.color == 'green' %}selected{% endif %}>Green</option>
+                    <option value="yellow" {% if player.color == 'yellow' %}selected{% endif %}>Yellow</option>
+                    <option value="red" {% if player.color == 'red' %}selected{% endif %}>Red</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="player2">Player 2 Name:</label>
-                <input type="text" id="player2" name="player2" required value="{{ player2 }}">
-                <label for="player2_color">Player 2 Color:</label>
-                <select id="player2_color" name="player2_color" required>
-                    <option value="blue" {% if player2_color == 'blue' %}selected{% endif %}>Blue</option>
-                    <option value="green" {% if player2_color == 'green' %}selected{% endif %}>Green</option>
-                    <option value="yellow" {% if player2_color == 'yellow' %}selected{% endif %}>Yellow</option>
-                    <option value="red" {% if player2_color == 'red' %}selected{% endif %}>Red</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="player3">Player 3 Name:</label>
-                <input type="text" id="player3" name="player3" required value="{{ player3 }}">
-                <label for="player3_color">Player 3 Color:</label>
-                <select id="player3_color" name="player3_color" required>
-                    <option value="blue" {% if player3_color == 'blue' %}selected{% endif %}>Blue</option>
-                    <option value="green" {% if player3_color == 'green' %}selected{% endif %}>Green</option>
-                    <option value="yellow" {% if player3_color == 'yellow' %}selected{% endif %}>Yellow</option>
-                    <option value="red" {% if player3_color == 'red' %}selected{% endif %}>Red</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="player4">Player 4 Name:</label>
-                <input type="text" id="player4" name="player4" required value="{{ player4 }}">
-                <label for="player4_color">Player 4 Color:</label>
-                <select id="player4_color" name="player4_color" required>
-                    <option value="blue" {% if player4_color == 'blue' %}selected{% endif %}>Blue</option>
-                    <option value="green" {% if player4_color == 'green' %}selected{% endif %}>Green</option>
-                    <option value="yellow" {% if player4_color == 'yellow' %}selected{% endif %}>Yellow</option>
-                    <option value="red" {% if player4_color == 'red' %}selected{% endif %}>Red</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Update Players</button>
             <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
         </form>
     </div>
