@@ -1,3 +1,5 @@
+import csv
+from io import StringIO
 from flask import Flask, render_template, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 
@@ -105,13 +107,15 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
 
-# Question model
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     category = db.relationship('Category', backref=db.backref('questions', lazy=True))
     question = db.Column(db.String(255), nullable=False)
     answer = db.Column(db.String(255), nullable=False)
+    flagged = db.Column(db.Boolean, default=False, nullable=False)  # Add the flagged column
+
+
 
 # Routes
 @app.route('/')
@@ -146,11 +150,11 @@ def players():
             
             db.session.commit()
             
-            return render_template('edit_players.html', players=players)
+            return render_template('players.html', players=players)
     else:
         with app.app_context():
             players = Player.query.all()
-            return render_template('edit_players.html', players=players)
+            return render_template('players.html', players=players)
 
 @app.route('/edit_players', methods=['GET', 'POST'])
 def edit_players():
@@ -203,30 +207,37 @@ def qa():
             questions = Question.query.all()
             return render_template('qa.html', categories=categories, questions=questions)
 
+
 @app.route('/add_qa', methods=['POST'])
 def add_qa():
     with app.app_context():
         category_id = request.form['category_id']
         question = request.form['question']
         answer = request.form['answer']
+        flagged = 'flagged' in request.form  # Check if the 'flagged' checkbox is present in the form data
 
-        new_question = Question(category_id=category_id, question=question, answer=answer)
+        new_question = Question(category_id=category_id, question=question, answer=answer, flagged=flagged)
         db.session.add(new_question)
         db.session.commit()
 
         return jsonify({'message': 'QA submitted successfully'})
+
+
 
 @app.route('/update_question', methods=['POST'])
 def update_question():
     with app.app_context():
         question_id = request.form['id']
         question_text = request.form['question']
+        flagged = request.form.get('flagged', False) == 'true'  # Get the flagged status from the form
 
         question = Question.query.get(question_id)
         question.question = question_text
+        question.flagged = flagged  # Update the flagged status
         db.session.commit()
 
         return jsonify({'message': 'Question updated successfully'})
+
 
 @app.route('/update_answer', methods=['POST'])
 def update_answer():
@@ -270,6 +281,47 @@ def update_category():
     category.name = name
     db.session.commit()
     return jsonify({'message': 'Category updated successfully'})
+
+@app.route('/delete_player', methods=['POST'])
+def delete_player():
+    with app.app_context():
+        player_id = request.form['id']
+
+        player = Player.query.get(player_id)
+        db.session.delete(player)
+        db.session.commit()
+
+        return jsonify({'message': 'Player deleted successfully'})
+    
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    csv_file = request.files['csv-file']
+    if csv_file:
+        stream = StringIO(csv_file.stream.read().decode("UTF8"), newline=None)
+        csv_data = csv.reader(stream)
+        next(csv_data)  # Skip the header row
+        
+        for row in csv_data:
+            question_text = row[0]
+            answer_text = row[1]
+            category_name = row[2]
+            flagged = row[3] == 'flagged'
+
+            category = Category.query.filter_by(name=category_name).first()
+            if not category:
+                category = Category(name=category_name)
+                db.session.add(category)
+                db.session.commit()
+
+            question = Question(question=question_text, answer=answer_text, flagged=flagged)
+            question.category = category
+            db.session.add(question)
+            db.session.commit()
+
+        return jsonify({'message': 'CSV file uploaded successfully'})
+
+    return jsonify({'message': 'No CSV file provided'})
+
     
 # Create the database tables
 with app.app_context():
