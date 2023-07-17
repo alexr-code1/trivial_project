@@ -6,6 +6,8 @@
 <body>
     <h1>QA</h1>
 
+    
+
     <h2>Categories</h2>
     <form id="categories-form" action="/qa" method="POST">
         <div class="form-group">
@@ -26,6 +28,17 @@
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+    <h2>Upload Questions from .csv <br></br>
+        The Rows are: 
+        questions, answers, categories, flagged or unflagged<br></br></h2>
+        <h2>Upload Questions from CSV</h2>
+        <form id="upload-csv-form">
+            <div class="form-group">
+                <label for="csv-file">Upload CSV file:</label>
+                <input type="file" class="form-control-file" id="csv-file" name="csv-file" accept=".csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
 
     <h2>Submit Questions</h2>
     <form id="submit-qa-form">
@@ -45,8 +58,13 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="flagged" name="flagged">
+            <label class="form-check-label" for="flagged">Flagged</label>
+        </div>
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+    
 
     <h2>Edit Categories</h2>
     <table class="table">
@@ -78,6 +96,7 @@
                 <th>Question</th>
                 <th>Answer</th>
                 <th>Category</th>
+                <th>Flagged</th>
                 <th></th>
             </tr>
         </thead>
@@ -92,6 +111,9 @@
                 </td>
                 <td>{{ question.category.name }}</td>
                 <td>
+                    <input type="checkbox" class="form-check-input edit-flagged" {% if question.flagged %}checked{% endif %} data-id="{{ question.id }}">
+                </td>
+                <td>
                     <button class="btn btn-primary update-question" data-id="{{ question.id }}">Update Question</button>
                     <button class="btn btn-primary update-answer" data-id="{{ question.id }}">Update Answer</button>
                     <button class="btn btn-danger delete-question" data-id="{{ question.id }}">Delete</button>
@@ -100,25 +122,59 @@
             {% endfor %}
         </tbody>
     </table>
+    
+    
 
     <button class="btn btn-primary" onclick="window.history.back()">Back</button>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         // Submit question form using AJAX
-        $(document).on('submit', '#submit-qa-form', function (e) {
+        $(document).on('submit', '#submit-qa-form', function(e) {
             e.preventDefault();
+
+            var formData = new FormData(this);
+
+            // Get the flagged value
+            var flagged = $('#flagged').prop('checked');
+            formData.append('flagged', flagged);
+
             $.ajax({
                 url: '/add_qa',
                 type: 'POST',
-                data: $(this).serialize(),
-                success: function (response) {
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
                     console.log(response);
                     alert('Question submitted successfully');
                 },
-                error: function (error) {
+                error: function(error) {
                     console.error(error);
                     alert('An error occurred while submitting the question');
+                }
+            });
+        });
+
+        // Upload CSV file
+        $(document).on('submit', '#upload-csv-form', function(e) {
+            e.preventDefault();
+
+            var formData = new FormData(this);
+
+            $.ajax({
+                url: '/upload_csv',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log(response);
+                    alert('CSV file uploaded successfully');
+                },
+                error: function(error) {
+                    console.error(error);
+                    alert('An error occurred while uploading the CSV file');
                 }
             });
         });
